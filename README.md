@@ -21,6 +21,8 @@ We only modified the file [`scikit-learn/sklearn/cluster/_hierarchical_fast.pyx`
 In that file, we changed `from libc.math cimport fmax` to `from libc.math cimport fmax, fmin` and
 we added `max_merge_tracking`, `average_merge_tracking`, 
 `single_merge_tracking`, `single_merge` functions.
+
+
 To install the modified `scikit-learn` library, 
 
 ```
