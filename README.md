@@ -2,7 +2,7 @@
 
 This repository includes the code used for the paper "From Certain to Uncertain: Toward Optimal Solution for Offline Multiple Object Tracking" (ICPR 2020).
 The work was done when I am working at Smart Mobility Reseach Center (SMRC) of Tokyo University of Agriculture and Technology.
-
+So I named the library `smrc`.
 
 ### Installation
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 ```
 
-We modified the [`scikit-learn 0.23.2`](https://github.com/scikit-learn/scikit-learn) library for the linkage
+We modified the [`scikit-learn 0.23.2`](https://github.com/scikit-learn/scikit-learn) library for the `linkages`
 used in our method.
 We only modified the file [`scikit-learn/sklearn/cluster/_hierarchical_fast.pyx`](scikit-learn/sklearn/cluster/_hierarchical_fast.pyx).
 
@@ -30,12 +30,118 @@ cd ../
 ```
 
 
-### Conduct tracking
+### Downloading MOTChallenge dataset
 
+The `MOTChallenge` datasets can be downloaded from its [official site](https://motchallenge.net/). We assume you
+have downloaded the [`MOT16`](https://motchallenge.net/data/MOT16/) and 
+[`MOT15`](https://motchallenge.net/data/2D_MOT_2015/) sequences in `./MOT16` and `./MOT15`, respectively. 
 
-### Recurrent Neural Networks
+### Generating features for public detections
 
-* [Deep learning book](http://www.deeplearningbook.org/) 
-[Chapter [10 Sequence Modeling: Recurrent and Recursive Nets](http://www.deeplearningbook.org/contents/rnn.html)]
-* [All of Recurrent Neural Networks (Notes of the deep learning book)](https://medium.com/@jianqiangma/all-about-recurrent-neural-networks-9e5ae2936f6e)
+We use the `deep sort` library to conduct this task.
+The `deep sort` library included in this repo is downloaded from its official implementation [here](https://github.com/nwojke/deep_sort).
 
+We will obtain the features for `MOT16` and `MOT15` by running 
+```
+cd deep_sort
+python tools/generate_detections.py \
+    --model=resources/networks/mars-small128.pb \
+    --mot_dir=../MOTChallenge/MOT16/train \
+    --output_dir=./resources/detections/MOT16_train
+
+python tools/generate_detections.py \
+    --model=resources/networks/mars-small128.pb \
+    --mot_dir=../MOTChallenge/MOT15/train \
+    --output_dir=./resources/detections/MOT15_train
+```
+To get the tracking results, run 
+```
+python evaluate_motchallenge.py --mot_dir=../MOTChallenge/MOT16/train --detection_dir=./resources/detections/MOT16_train --output_dir ./MOT16_train_results --min_confidence=0.3 --nn_budget=100
+```
+
+In our experiments, we restrict both our method and deep sort to only merge existing detections 
+(without handling missed detections) for comparison. The command used for deep sort is,
+
+```
+python evaluate_motchallenge_no_prediction.py --mot_dir=../MOTChallenge/MOT16/train --detection_dir=./resources/detections/MOT16_train --output_dir ./MOT16_train_results --min_confidence=0.3 --nn_budget=100
+```
+
+To conduct tracking using  our method (`AHC_ETE`), run  
+
+```
+cd ../
+ln -s $PWD/deep_sort/resources ./MOTChallenge/resources
+cd smrc/object_tracking/benchmark/
+python mot_eval.py
+```
+
+The following section is where we set the used tracking experts and the test datasets.
+```
+if __name__ == "__main__":
+    mot = MOTEval()
+
+    from smrc.object_tracking.benchmark.expertconfig_ahc_ete import ExpertTeam
+    mot.evaluate_AHC_ETE('MOT16/train', expert_team_config=ExpertTeam)
+    mot.evaluate_AHC_ETE('MOT15/train', expert_team_config=ExpertTeam)
+
+```
+The results are saved in `smrc/object_tracking/benchmark/MOT16` and `smrc/object_tracking/benchmark/MOT15`.
+
+### Evaluating the tracking results
+
+The evaluation code was downloaded from https://github.com/cheind/py-motmetrics in October, 2020.
+First, we need to install the dependencies.
+```
+cd py-motmetrics-develop
+pip install -r requirements.txt
+```
+
+Then, we can evaluate the results by
+```
+python -m motmetrics.apps.eval_motchallenge ../MOTChallenge/MOT16/train ../smrc/object_tracking/benchmark/MOT16
+```
+We obtained the following results,
+```
+05:16:01 INFO - Found 7 groundtruths and 7 test files.
+05:16:01 INFO - Available LAP solvers ['scipy']
+05:16:01 INFO - Default LAP solver 'scipy'
+05:16:01 INFO - Loading files.
+05:16:02 INFO - Comparing MOT16-10...
+05:16:03 INFO - Comparing MOT16-13...
+05:16:03 INFO - Comparing MOT16-05...
+05:16:04 INFO - Comparing MOT16-02...
+05:16:05 INFO - Comparing MOT16-11...
+05:16:05 INFO - Comparing MOT16-04...
+05:16:06 INFO - Comparing MOT16-09...
+05:16:07 INFO - Running metrics
+05:16:08 INFO - partials: 1.135 seconds.
+05:16:08 INFO - mergeOverall: 1.142 seconds.
+          IDF1   IDP   IDR  Rcll  Prcn  GT MT  PT  ML   FP    FN IDs    FM  MOTA  MOTP IDt IDa IDm
+MOT16-10 39.7% 59.8% 29.7% 40.9% 82.3%  54  7  22  25 1085  7283  99   436 31.3% 0.255  22  52  10
+MOT16-13 30.2% 70.5% 19.2% 23.6% 86.5% 107 10  33  64  422  8726  47   240 19.5% 0.271  21  34  15
+MOT16-05 46.9% 78.8% 33.4% 39.0% 92.0% 125  9  57  59  229  4140  57   153 34.8% 0.242  22  38  17
+MOT16-02 33.3% 77.0% 21.2% 23.4% 84.9%  54  6  15  33  741 13658  60   283 18.9% 0.249  26  22   7
+MOT16-11 61.3% 80.5% 49.5% 55.9% 91.0%  69 12  25  32  507  4047  38    94 49.9% 0.215   7  26   4
+MOT16-04 46.7% 67.0% 36.2% 45.1% 82.1%  83  9  42  32 4692 26086 191   983 34.9% 0.221  91  72   9
+MOT16-09 49.1% 55.6% 44.0% 58.1% 73.5%  25  4  17   4 1102  2203 102   164 35.2% 0.265  36  46   2
+OVERALL  44.1% 68.5% 32.6% 40.1% 83.4% 517 57 211 249 8778 66143 594  2353 31.6% 0.234 225 290  64
+05:16:08 INFO - Completed
+```
+
+To evaluate the results of deep sort,
+```
+python -m motmetrics.apps.eval_motchallenge ../MOTChallenge/MOT16/train  ../deep_sort/MOT16_train_results
+```
+
+### Reference 
+
+The paper for deep sort is below.
+```
+@inproceedings{Wojke2018deep,
+  title={Deep Cosine Metric Learning for Person Re-identification},
+  author={Wojke, Nicolai and Bewley, Alex},
+  booktitle={2018 IEEE Winter Conference on Applications of Computer Vision (WACV)},
+  year={2018},
+  pages={748--756}
+}
+```

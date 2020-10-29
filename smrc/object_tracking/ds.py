@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 import os
 
-from .tracker import TrackerSMRC, DataHub
+from .tracker import TrackerSMRC
+from .data_hub import DataHub
 import smrc.utils
 
 from .deep_sort import nn_matching, preprocessing
