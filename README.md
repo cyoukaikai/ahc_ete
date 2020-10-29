@@ -14,14 +14,19 @@ pip install -r requirements.txt
 
 ```
 
-We modified the ``
+We modified the [`scikit-learn 0.23.2`](https://github.com/scikit-learn/scikit-learn) library for the linkage
+used in our method.
+We only modified the file [`scikit-learn/sklearn/cluster/_hierarchical_fast.pyx`](scikit-learn/sklearn/cluster/_hierarchical_fast.pyx).
 
-https://github.com/scikit-learn/scikit-learn
+We changed `from libc.math cimport fmax` to `from libc.math cimport fmax, fmin` and
+we added `max_merge_tracking`, `average_merge_tracking`, 
+`single_merge_tracking`, `single_merge` functions.
+To install the modified `scikit-learn` library, 
 
+```
 cd scikit-learn
 pip install -e ./
 cd ../
-
 ```
 
 

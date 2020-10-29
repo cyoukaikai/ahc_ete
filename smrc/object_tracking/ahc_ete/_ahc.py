@@ -39,7 +39,8 @@ My implementations are:
     'complete_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.max_merge_tracking,
     'average_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.average_merge_tracking,
     'single_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.single_merge_tracking.
-I also wrote "single_merge" (single-linkage) to simulate the function of "average_merge" and "max_merge",
+I also wrote "single_merge" for single-linkage (scikit-learn/sklearn/cluster/_hierarchical_fast.single_merge) 
+to simulate the function of "average_merge" and "max_merge",
 but please be aware that faster implementation exists and that's why single-linkage was not in "_hierarchical_fast". 
 
 Note that the standard AHC assumes the cluster distance can be directly derived from pdist. 
