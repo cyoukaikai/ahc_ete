@@ -12,6 +12,11 @@ conda activate ahc-ete
 
 pip install -r requirements.txt
 
+```
+
+We modified the ``
+
+https://github.com/scikit-learn/scikit-learn
 
 cd scikit-learn
 pip install -e ./

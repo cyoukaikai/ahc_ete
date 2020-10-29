@@ -15,41 +15,56 @@ from object_tracking.data_hub import Query
 from object_tracking.ahc_ete.standard_ahc import AHC
 
 """
-The original merging methods, i.e., 
-    'complete': _hierarchical.max_merge,
-    'average': _hierarchical.average_merge,
-    'single': _hierarchical.single_merge,
-are used 'union' strategy to update the can-link list, i.e., if cluster A can link with C, D and cluster B 
-can link with C, E, the cluster (A, B) can link with C, D and E. 
+The original merging methods (complete-linkage and average-linkage),
+    'complete': scikit-learn/sklearn/cluster/_hierarchical_fast.max_merge,
+    'average': scikit-learn/sklearn/cluster/_hierarchical_fast.average_merge
+used 'union' strategy to update the can-link list, i.e., if cluster A can link with clusters C and D, 
+and cluster B can link with clusters C and E, then cluster (A, B) can link with C, D and E. 
 The 'union' strategy is designed for handling sparse connectivity in which we are only aware of the local information 
-thatA can link with C, D, but no information for whether A can link with E because E is far from A.
+that A can link with C, D, but no information for whether A can link with E because E is somehow 
+(e.g., temporally or spatially) far from A.
 
-However, for object tracking, we have to reflect the spatial-temporal constraints during the initialization of the 
-can-link set. So if "A can link with C, D, ..." and "E" is not in the list, then E should never be connected with a 
-cluster of which A is a member. Thus, I should use the 'intersection' strategy,
-i.e., if cluster A can link with C, D and cluster B can link with C, E, the cluster
+However, for object tracking, we have to take the 'spatial-temporal constraint' into consideration:
+an object cannot appear in more than one location in a specific frame. Thereby,
+detections in the same image should not belong to the same track.
+The 'union' strategy cannot guarantee that the 'spatial-temporal constraint' is respected when conduct a merging.
+One way to solve this issue is to explicitly list all can-links for a detection and then use 
+the 'intersection' strategy: if cluster A can link with C, D and cluster B can link with C, E, then cluster
 (A, B) can only link with C, not D or E.
-My implementations are:
-    'complete': _hierarchical.max_merge_tracking,
-    'average': _hierarchical.average_merge_tracking,
-    'single': _hierarchical.single_merge_tracking,
-    
-If we set the cannot link position in pdist to BIG_VALUE (e.g., 1e+5), then using the
-original python AHC (only limited to complete and average linkage) can get the same results and 
-run much faster than my implementation. 
-But the "single" linkage with spatial-temporal constraints is not available for the standard ahc.
+So the merging strategy for object tracking is:
+if "A can link with C, D, ..." and "E" is not in the list, then E should never be connected with a 
+cluster of which A is a member. 
 
-Moreover, the standard ahc assume the cluster distance can be directly derived from pdist.
-However, the distance of the two tracks can not always be derived from the precomputed pdist,
-e.g., Temporal distance, Kalman Filter distance.
-Estimating the pdist for combined (dynamic) distance metrics in advance and then conduct the 
-standard ahc is impossible in some case.
+My implementations are:
+    'complete_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.max_merge_tracking,
+    'average_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.average_merge_tracking,
+    'single_tracking': scikit-learn/sklearn/cluster/_hierarchical_fast.single_merge_tracking.
+I also wrote "single_merge" (single-linkage) to simulate the function of "average_merge" and "max_merge",
+but please be aware that faster implementation exists and that's why single-linkage was not in "_hierarchical_fast". 
+
+Note that the standard AHC assumes the cluster distance can be directly derived from pdist. 
+However, the distance of the two tracks can not always be derived from the precomputed pdist when
+    1) the number of detections is large (> 10K, due to memory complexity) or
+    2) multiple distance measures (e.g., temporal distance, Kalman Filter distance) are used.
+
 If I used the standard ahc, I cannot use one major distance metric to guide the merging and 
-other multiple distance metrics as filter to disable a merging. 
+other multiple distance metrics as filters to disable a merging. 
 That is, once the recommended merging (the closest pair of clusters based on
 the major distance metric) is not valid, then the merging is skipped. 
 
 This is the reason I implemented ahc by myself.
+
+Please note that if 
+    a) the number of detections is not large so that all detections can be loaded
+    into memory and 
+    b) the distance of the two tracks can be derived from the precomputed pdist,
+then setting the cannot-link positions in pdist to BIG_VALUE (e.g., 1e+5) for detections
+in the same image and using the standard AHC (only limited to complete and average linkage) 
+can get the same results and run much faster than my implementation with the spatial-temporal 
+constraint being respected.
+The "single" linkage with spatial-temporal constraint is not available because 
+the "single" linkage for the standard AHC only consider the closest distance between the 
+members of two clusters, spatial-temporal constraint will not be respected.
 """
 
 #####################################################
