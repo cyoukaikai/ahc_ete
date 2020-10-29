@@ -60,8 +60,8 @@ To get the tracking results, run
 python evaluate_motchallenge.py --mot_dir=../MOTChallenge/MOT16/train --detection_dir=./resources/detections/MOT16_train --output_dir ./MOT16_train_results --min_confidence=0.3 --nn_budget=100
 ```
 
-In our experiments, we restrict both our method and Deep Sort (reference 1)to merge only existing detections 
-(without handling missed detections) for comparison. The command used for Deep Sort (reference 1)is,
+In our experiments, we restrict both our method and Deep Sort to merge only existing detections 
+(without handling missed detections) for comparison. The command used for Deep Sort is,
 
 ```
 python evaluate_motchallenge_no_prediction.py --mot_dir=../MOTChallenge/MOT16/train --detection_dir=./resources/detections/MOT16_train --output_dir ./MOT16_train_results --min_confidence=0.3 --nn_budget=100
