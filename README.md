@@ -18,7 +18,7 @@ We modified the [`scikit-learn 0.23.2`](https://github.com/scikit-learn/scikit-l
 used in our method.
 We only modified the file [`scikit-learn/sklearn/cluster/_hierarchical_fast.pyx`](scikit-learn/sklearn/cluster/_hierarchical_fast.pyx).
 
-We changed `from libc.math cimport fmax` to `from libc.math cimport fmax, fmin` and
+In that file, we changed `from libc.math cimport fmax` to `from libc.math cimport fmax, fmin` and
 we added `max_merge_tracking`, `average_merge_tracking`, 
 `single_merge_tracking`, `single_merge` functions.
 To install the modified `scikit-learn` library, 
@@ -34,12 +34,13 @@ cd ../
 
 The `MOTChallenge` datasets can be downloaded from its [official site](https://motchallenge.net/). We assume you
 have downloaded the [`MOT16`](https://motchallenge.net/data/MOT16/) and 
-[`MOT15`](https://motchallenge.net/data/2D_MOT_2015/) sequences in `./MOT16` and `./MOT15`, respectively. 
+[`MOT15`](https://motchallenge.net/data/2D_MOT_2015/) sequences in `./MOTChallenge/MOT16` and `./MOTChallenge/MOT15`, respectively. 
 
 ### Generating features for public detections
 
-We use the `deep sort` library to conduct this task.
-The `deep sort` library included in this repo is downloaded from its official implementation [here](https://github.com/nwojke/deep_sort).
+We use the `deep_sort` library to conduct this task.
+The `deep_sort` library included in this repo was downloaded from its official implementation [here](https://github.com/nwojke/deep_sort) 
+in April, 2020.
 
 We will obtain the features for `MOT16` and `MOT15` by running 
 ```
@@ -59,7 +60,7 @@ To get the tracking results, run
 python evaluate_motchallenge.py --mot_dir=../MOTChallenge/MOT16/train --detection_dir=./resources/detections/MOT16_train --output_dir ./MOT16_train_results --min_confidence=0.3 --nn_budget=100
 ```
 
-In our experiments, we restrict both our method and deep sort to only merge existing detections 
+In our experiments, we restrict both our method and deep sort to merge only existing detections 
 (without handling missed detections) for comparison. The command used for deep sort is,
 
 ```
@@ -75,7 +76,7 @@ cd smrc/object_tracking/benchmark/
 python mot_eval.py
 ```
 
-The following section is where we set the used tracking experts and the test datasets.
+The following section is where we set the used tracking experts and the test datasets in `mot_eval.py`.
 ```
 if __name__ == "__main__":
     mot = MOTEval()
@@ -134,8 +135,7 @@ python -m motmetrics.apps.eval_motchallenge ../MOTChallenge/MOT16/train  ../deep
 ```
 
 ### Reference 
-
-The paper for deep sort is below.
+The first paper is for deep sort and the second paper is for our method.
 ```
 @inproceedings{Wojke2018deep,
   title={Deep Cosine Metric Learning for Person Re-identification},
@@ -144,4 +144,14 @@ The paper for deep sort is below.
   year={2018},
   pages={748--756}
 }
+
+
+@inproceedings{zhao2020from,
+  title={From Certain to Uncertain: Toward Optimal Solution for Offline Multiple Object Tracking},
+  author={Zhao, Kaikai and Imaseki, Takashi and Mouri, Hiroshi and Suzuki, Einoshin and Matsukawa, Tetsu},
+  booktitle={International Conference on Pattern Recognition (ICPR)},
+  year={2020},
+  organization={(accepted for publication)}
+}
+
 ```
